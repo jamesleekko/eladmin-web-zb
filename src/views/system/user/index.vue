@@ -74,6 +74,18 @@
         <!--表单渲染-->
         <el-dialog append-to-body :close-on-click-modal="false" :before-close="crud.cancelCU" :visible.sync="crud.status.cu > 0" :title="crud.status.title" width="570px">
           <el-form ref="form" :inline="true" :model="form" :rules="rules" size="small" label-width="66px">
+            <el-form-item v-if="form.id" label="头像" prop="avatarName">
+              <div class="el-upload avatar-upload">
+                <img :src="form.avatarName ? baseApi + '/avatar/' + form.avatarName : Avatar" title="点击上传头像" class="avatar-img" @click="toggleAvatarShow">
+                <myUpload
+                  v-model="avatarShow"
+                  :headers="avatarHeaders"
+                  :url="avatarUploadUrl"
+                  field="avatar"
+                  @crop-upload-success="cropUploadSuccess"
+                />
+              </div>
+            </el-form-item>
             <el-form-item label="用户名" prop="username">
               <el-input v-model="form.username" @keydown.native="keydown($event)" />
             </el-form-item>
@@ -212,15 +224,18 @@ import udOperation from '@crud/UD.operation'
 import pagination from '@crud/Pagination'
 import DateRangePicker from '@/components/DateRangePicker'
 import Treeselect from '@riophae/vue-treeselect'
+import myUpload from 'vue-image-crop-upload'
 import { mapGetters } from 'vuex'
+import { getToken } from '@/utils/auth'
+import Avatar from '@/assets/images/avatar.png'
 import '@riophae/vue-treeselect/dist/vue-treeselect.css'
 import { LOAD_CHILDREN_OPTIONS } from '@riophae/vue-treeselect'
 let userRoles = []
 let userJobs = []
-const defaultForm = { id: null, username: null, nickName: null, gender: '男', email: null, enabled: 'false', roles: [], jobs: [], dept: { id: null }, phone: null }
+const defaultForm = { id: null, username: null, nickName: null, gender: '男', email: null, enabled: 'false', roles: [], jobs: [], dept: { id: null }, phone: null, avatarName: null }
 export default {
   name: 'User',
-  components: { Treeselect, crudOperation, rrOperation, udOperation, pagination, DateRangePicker },
+  components: { Treeselect, crudOperation, rrOperation, udOperation, pagination, DateRangePicker, myUpload },
   cruds() {
     return CRUD({ title: '用户', url: 'api/users', crudMethod: { ...crudUser }})
   },
@@ -241,6 +256,9 @@ export default {
     return {
       height: document.documentElement.clientHeight - 180 + 'px;',
       deptName: '', depts: [], deptDatas: [], jobs: [], level: 3, roles: [],
+      avatarShow: false,
+      Avatar: Avatar,
+      avatarHeaders: { 'Authorization': getToken() },
       jobDatas: [], roleDatas: [], // 多选时使用
       defaultProps: { children: 'children', label: 'name', isLeaf: 'leaf' },
       permission: {
@@ -273,8 +291,13 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'user'
-    ])
+      'user',
+      'updateAvatarApi',
+      'baseApi'
+    ]),
+    avatarUploadUrl() {
+      return this.form.id ? this.updateAvatarApi + '/' + this.form.id : this.updateAvatarApi
+    }
   },
   created() {
     this.crud.msg.add = '新增成功，默认密码：123456'
@@ -286,6 +309,14 @@ export default {
     }
   },
   methods: {
+    toggleAvatarShow() {
+      this.avatarShow = !this.avatarShow
+    },
+    cropUploadSuccess(jsonData) {
+      if (jsonData && jsonData.avatar) {
+        this.form.avatarName = jsonData.avatar
+      }
+    },
     // 禁止输入空格
     keydown(e) {
       if (e.keyCode === 32) {
@@ -509,5 +540,14 @@ export default {
   ::v-deep .vue-treeselect__control,::v-deep .vue-treeselect__placeholder,::v-deep .vue-treeselect__single-value {
     height: 30px;
     line-height: 30px;
+  }
+  .avatar-upload {
+    .avatar-img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: block;
+    }
   }
 </style>

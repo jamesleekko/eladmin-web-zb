@@ -18,6 +18,8 @@ const api = {
     swaggerApi: baseUrl + '/doc.html',
     // 文件上传
     fileUploadApi: baseUrl + '/api/localStorage',
+    // 通用文件上传
+    generalUploadApi: baseUrl + '/api/file/upload',
     // baseUrl，
     baseApi: baseUrl
   }
